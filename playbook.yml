@@ -1,0 +1,52 @@
+---
+- hosts: webserver
+  vars:
+          doc_root : /var/www/bobby
+          httpd_port: 8080
+  tasks:
+        - name: Installing Webserver
+          yum:
+                  name:
+                          - httpd
+                          - firewalld
+                  state: present
+        - name: Create coustom doc root
+          file:
+                 path: "{{ doc_root }}"
+                 state: directory
+        - name: Copy Coustom conf file
+          template: 
+                dest: "/etc/httpd/conf.d/web.conf"
+                src: web.conf
+          notify: restart httpd          
+
+        - name: Copy the webpage code to doc root
+          copy:
+                  src: index.html
+                  dest: "{{ doc_root }}/index.html"
+
+        - name: Start the firewall and enabled
+          service:
+                  name: firewalld
+                  state: started
+        - name: firewalld permits access to httpd service port
+          firewalld:
+                 port: "{{ httpd_port }}/tcp"
+                 permanent: yes
+                 state: enabled
+                 immediate: yes
+
+        - name: Start and enable services
+          service:
+                  name: httpd
+                  state: started
+                  enabled: yes
+  handlers:
+        - name: restart httpd
+          service:
+                  name: httpd
+                  state: restarted
+
+                 
+
+
